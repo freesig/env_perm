@@ -3,6 +3,12 @@ name = "env_perm"
 version = "0.1.0"
 authors = ["Tom Gowan <tomrgowan@gmail.com>"]
 edition = "2018"
+description = "Sets environment variables in your profile"
+documentation = "https://docs.rs/env_perm"
+repository = "https://github.com/freesig/env_perm"
+readme = "README.md"
+license = "MIT"
+keywords = ["env", "environment", "variable"]
 
 [dependencies]
 dirs = "1.0"
