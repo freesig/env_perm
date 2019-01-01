@@ -59,15 +59,10 @@ fn get_profile() -> io::Result<File> {
 }
 
 #[cfg(target_family = "unix")]
-fn find_profile(mut home: PathBuf) -> io::Result<File> {
+fn find_profile(mut profile: PathBuf) -> io::Result<File> {
     let mut oo = OpenOptions::new();
-    oo.append(true);
-    let mut profile = home.clone();
-    profile.push(".profile");
-    oo.clone()
+    profile.push(".bash_profile");
+    oo.append(true)
+        .create(true)
         .open(profile)
-        .or_else(|_| {
-            home.push(".bash_profile");
-            oo.open(home)
-        })
 }
