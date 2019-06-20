@@ -1,6 +1,6 @@
 [package]
 name = "env_perm"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Tom Gowan <tomrgowan@gmail.com>"]
 edition = "2018"
 description = "Sets environment variables in your profile"

@@ -14,7 +14,7 @@
 //! env_perm::set("DUMMY", r#""/something""#).expect("Failed to set DUMMY");
 //! ```
 
-use std::io::{self, Write}; 
+use std::io::{self, Write};
 use std::fs::{File, OpenOptions};
 use std::path::PathBuf;
 use std::env;
@@ -35,21 +35,23 @@ where T: fmt::Display + AsRef<std::ffi::OsStr>,
 }
 
 /// Appends a value to an environment variable
-/// Useful for appending a value to PATH 
+/// Useful for appending a value to PATH
 pub fn append<T: fmt::Display>(var: T, value: T) -> io::Result<()> {
     let mut profile = get_profile()?;
-    writeln!(profile, "\nexport {}=\"{}:${}\"", var, value, var)
+    writeln!(profile, "\nexport {}=\"{}:${}\"", var, value, var)?;
+    profile.flush()
 }
 
-/// Sets an environment variable without checking 
-/// if it exists. 
+/// Sets an environment variable without checking
+/// if it exists.
 /// If it does you will end up with two
 /// assignments in your profile.
 /// It's recommended to use `check_or_set`
 /// unless you are certain it doesn't exist.
 pub fn set<T: fmt::Display, U: fmt::Display>(var: T, value: U) -> io::Result<()> {
     let mut profile = get_profile()?;
-    writeln!(profile, "\nexport {}={}", var, value)
+    writeln!(profile, "\nexport {}={}", var, value)?;
+    profile.flush()
 }
 
 fn get_profile() -> io::Result<File> {
