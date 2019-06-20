@@ -17,8 +17,9 @@ env_perm::set("DUMMY", r#""/something""#).expect("Failed to set DUMMY");
 ```
 
 ## Usage
-This crate simply appends to your `.bash_profile`.
-It will create a `.bash_profile` file if one is not
+This crate simply appends to your `.bash_profile` or `.bash_login` or `.profile`
+in that order.
+It will create a `.bash_profile` file if none of the above are
 found in your home directory.
 `ie. /Users/me/.bash_profile`.
 

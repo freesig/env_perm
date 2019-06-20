@@ -62,9 +62,25 @@ fn get_profile() -> io::Result<File> {
 
 #[cfg(target_family = "unix")]
 fn find_profile(mut profile: PathBuf) -> io::Result<File> {
-    let mut oo = OpenOptions::new();
     profile.push(".bash_profile");
+    let mut oo = OpenOptions::new();
     oo.append(true)
-        .create(true)
-        .open(profile)
+        .create(false);
+    oo.open(profile.clone())
+        .or_else(|_|{
+            profile.pop();
+            profile.push(".bash_login");
+            oo.open(profile.clone())
+        })
+        .or_else(|_|{
+            profile.pop();
+            profile.push(".profile");
+            oo.open(profile.clone())
+        })
+        .or_else(|_|{
+            profile.pop();
+            profile.push(".bash_profile");
+            oo.create(true);
+            oo.open(profile.clone())
+        })
 }
