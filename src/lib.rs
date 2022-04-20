@@ -182,6 +182,7 @@ pub fn prepend<T: fmt::Display>(var: T, value: T) -> io::Result<()> {
     writeln!(profile, "\nexport {}=\"${}:{}\"", var, value, var)?;
     profile.flush()
 }
+
 /// Prepends a value to an environment variable
 /// Useful for prepending a value to PATH
 #[cfg(target_os = "windows")]
