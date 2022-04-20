@@ -1,9 +1,9 @@
 [package]
 name = "set_env"
-version = "0.1.3"
-authors = ["Tom Gowan <tomrgowan@gmail.com>"]
-edition = "2018"
-description = "Sets environment variables in your profile"
+version = "1.0.0"
+authors = ["CGQAQ <m.jason.liu@outlook.com>"]
+edition = "2021"
+description = "Sets environment variables permanently across all major platforms"
 documentation = "https://docs.rs/env_perm"
 repository = "https://github.com/freesig/env_perm"
 readme = "README.md"

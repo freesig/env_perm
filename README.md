@@ -2,6 +2,8 @@
 
 This crate allows you to permanently set environment variables
 
+## Based on [env_perm](https://github.com/freesig/env_perm)
+
 ## Examples
 ```rust
 // Check if DUMMY is set, if not set it to 1
