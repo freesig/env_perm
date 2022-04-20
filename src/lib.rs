@@ -114,7 +114,7 @@ pub fn get_from_environment<'a, T: fmt::Display>(var: T) -> io::Result<String> {
     };
 }
 
-/// Prepends a value to an environment variable
+/// Appends a value to an environment variable
 /// Useful for appending a value to PATH
 #[cfg(target_family = "unix")]
 pub fn append<T: fmt::Display>(var: T, value: T) -> io::Result<()> {
@@ -122,7 +122,7 @@ pub fn append<T: fmt::Display>(var: T, value: T) -> io::Result<()> {
     writeln!(profile, "\nexport {}=\"{}:${}\"", var, value, var)?;
     profile.flush()
 }
-/// Prepends a value to an environment variable
+/// Appends a value to an environment variable
 /// Useful for appending a value to PATH
 #[cfg(target_os = "windows")]
 pub fn append<T: fmt::Display>(var: T, value: T) -> io::Result<()> {
@@ -174,14 +174,16 @@ pub fn append<T: fmt::Display>(var: T, value: T) -> io::Result<()> {
     };
 }
 
-/// Appends a value to an environment variable
-/// Useful for appending a value to PATH
+/// Prepends a value to an environment variable
+/// Useful for prepending a value to PATH
 #[cfg(target_family = "unix")]
 pub fn prepend<T: fmt::Display>(var: T, value: T) -> io::Result<()> {
     let mut profile = get_profile()?;
     writeln!(profile, "\nexport {}=\"${}:{}\"", var, value, var)?;
     profile.flush()
 }
+/// Prepends a value to an environment variable
+/// Useful for prepending a value to PATH
 #[cfg(target_os = "windows")]
 pub fn prepend<T: fmt::Display>(var: T, value: T) -> io::Result<()> {
     use windows::Win32::Foundation::ERROR_SUCCESS;
