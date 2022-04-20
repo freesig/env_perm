@@ -1,4 +1,4 @@
-# env_perm
+# set_env
 
 This crate allows you to permanently set environment variables
 
@@ -25,8 +25,4 @@ It will create a `.bash_profile` file if none of the above are
 found in your home directory.
 `ie. /Users/me/.bash_profile`.
 
-I have only tested this on macOS but it should
-work on any unix system. I want to add windows 
-support soon.
-
-Contributions are welcome.
+On windows, this crate will modify the `HKEY_CURRENT_USER\Environment` registry items
