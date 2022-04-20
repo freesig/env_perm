@@ -1,4 +1,4 @@
-use env_perm;
+use set_env;
 
 fn main() {
     // Check if DUMMY is set, if not set it to 1
