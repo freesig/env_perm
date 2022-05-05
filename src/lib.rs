@@ -74,7 +74,12 @@ where
     T: fmt::Display + AsRef<std::ffi::OsStr>,
     U: fmt::Display,
 {
-    env::var(&var).map(|_| ()).or_else(|_| set(var, value))
+    let from = get_from_environment(var).unwrap();
+    if from.len > 0 {
+        Ok(())
+    } else {
+        set(var, value)?
+    }
 }
 
 #[cfg(target_os = "windows")]
