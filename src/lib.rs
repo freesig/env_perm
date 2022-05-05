@@ -30,6 +30,7 @@ use windows::Win32::System::Registry;
 use windows::core::PCWSTR;
 
 use std::env;
+use std::env::VarError;
 use std::fmt;
 use std::io;
 
@@ -74,7 +75,7 @@ where
     T: fmt::Display + AsRef<std::ffi::OsStr>,
     U: fmt::Display,
 {
-    let from = get_from_environment(var).unwrap();
+    let from = get(var).unwrap();
     if from.len > 0 {
         Ok(())
     } else {
@@ -82,8 +83,20 @@ where
     }
 }
 
+#[cfg(target_family = "unix")]
+pub fn get<'a, T: fmt::Display>(var: T) -> io::Result<String> {
+    env::var(var.to_string()).map_err(|err| match err {
+        VarError::NotPresent => {
+            io::Error::new(io::ErrorKind::NotFound, "Variable not present.")
+        }
+        VarError::NotUnicode(_) => {
+            io::Error::new(io::ErrorKind::Unsupported, "Encoding not supported.")
+        }
+    })
+}
+
 #[cfg(target_os = "windows")]
-pub fn get_from_environment<'a, T: fmt::Display>(var: T) -> io::Result<String> {
+pub fn get<'a, T: fmt::Display>(var: T) -> io::Result<String> {
     use std::ffi::c_void;
 
     use windows::Win32::Foundation::ERROR_SUCCESS;
@@ -146,7 +159,7 @@ pub fn append<T: fmt::Display>(var: T, value: T) -> io::Result<()> {
             &mut key as *mut Registry::HKEY,
         );
 
-        let env_string = get_from_environment(&var)?;
+        let env_string = get(&var)?;
 
         let var = ToWide::from(&var.to_string());
         if result == ERROR_SUCCESS {
@@ -207,7 +220,7 @@ pub fn prepend<T: fmt::Display>(var: T, value: T) -> io::Result<()> {
             &mut key as *mut Registry::HKEY,
         );
 
-        let env_string = get_from_environment(&var)?;
+        let env_string = get(&var)?;
 
         let var = ToWide::from(&var.to_string());
         if result == ERROR_SUCCESS {
