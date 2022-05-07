@@ -29,7 +29,9 @@ use windows::Win32::System::Registry;
 #[cfg(target_family = "windows")]
 use windows::core::PCWSTR;
 
+#[cfg(target_family = "unix")]
 use std::env;
+#[cfg(target_family = "unix")]
 use std::env::VarError;
 use std::fmt;
 use std::io;
@@ -75,11 +77,12 @@ where
     T: fmt::Display + AsRef<std::ffi::OsStr>,
     U: fmt::Display,
 {
-    let from = get(var).unwrap();
-    if from.len > 0 {
+    let from = get(&var).unwrap();
+    if from.len() > 0 {
         Ok(())
     } else {
-        set(var, value)?
+        set(var, value)?;
+        Ok(())
     }
 }
 
