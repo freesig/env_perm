@@ -79,7 +79,8 @@ pub fn get<'a, T: fmt::Display>(var: T) -> io::Result<String> {
 
 #[cfg(target_os = "windows")]
 pub fn get<'a, T: fmt::Display>(var: T) -> io::Result<String> {
-    Ok(RegKey::predef(HKEY_CURRENT_USER).get_value::<String, String>(var.to_string())?.to_string())
+    let key = RegKey::predef(HKEY_CURRENT_USER).open_subkey("Environment")?;
+    Ok(key.get_value::<String, String>(var.to_string())?.to_string())
 }
 
 /// Appends a value to an environment variable
