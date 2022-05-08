@@ -24,10 +24,10 @@ use std::io::Write;
 use std::path::PathBuf;
 
 #[cfg(target_family = "windows")]
-use windows::Win32::System::Registry;
+use winreg::RegKey;
 
 #[cfg(target_family = "windows")]
-use windows::core::PCWSTR;
+use winreg::enums::{HKEY_CURRENT_USER, KEY_ALL_ACCESS};
 
 #[cfg(target_family = "unix")]
 use std::env;
@@ -36,27 +36,6 @@ use std::env::VarError;
 use std::fmt;
 use std::io;
 
-#[cfg(target_family = "windows")]
-struct ToWide {
-    inner: Vec<u16>,
-    pub wide: PCWSTR,
-}
-
-#[cfg(target_family = "windows")]
-impl ToWide {
-    fn from(s: &str) -> Self {
-        use std::ffi::OsStr;
-        use std::os::windows::ffi::OsStrExt;
-        let v = OsStr::new(s)
-            .encode_wide()
-            .chain(Some(0).into_iter())
-            .collect::<Vec<u16>>();
-        ToWide {
-            inner: v.to_vec(),
-            wide: PCWSTR(v.as_ptr()),
-        }
-    }
-}
 
 /// Checks if a environment variable is set.
 /// If it is then nothing will happen.
@@ -100,39 +79,7 @@ pub fn get<'a, T: fmt::Display>(var: T) -> io::Result<String> {
 
 #[cfg(target_os = "windows")]
 pub fn get<'a, T: fmt::Display>(var: T) -> io::Result<String> {
-    use std::ffi::c_void;
-
-    use windows::Win32::Foundation::ERROR_SUCCESS;
-    return unsafe {
-        // A pointer to a null-terminated string of 16-bit Unicode characters.
-        let subkey = ToWide::from("Environment");
-
-        let var = ToWide::from(&var.to_string());
-        let mut buffer: Vec<u16> = Vec::with_capacity(1024 * 1024);
-        let mut buffer_len: u32 = (buffer.capacity() * 2) as u32;
-        let result = Registry::RegGetValueW(
-            Registry::HKEY_CURRENT_USER,
-            subkey.wide,
-            var.wide,
-            Registry::RRF_RT_ANY,
-            std::ptr::null_mut(),
-            buffer.as_mut_ptr() as *mut c_void,
-            &mut buffer_len as *mut u32,
-        );
-        if result != ERROR_SUCCESS {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!(
-                    "Failed to get environment variable, Error code: {}",
-                    result.0
-                ),
-            ));
-        }
-        buffer.set_len(buffer_len as usize);
-        let str = String::from_utf16(&buffer).unwrap();
-        let str = &str.trim_end_matches('\0');
-        Ok(str.to_string())
-    };
+    Ok(RegKey::predef(HKEY_CURRENT_USER).get_value::<String, String>(var.to_string())?.to_string())
 }
 
 /// Appends a value to an environment variable
@@ -147,52 +94,15 @@ pub fn append<T: fmt::Display>(var: T, value: T) -> io::Result<()> {
 /// Useful for appending a value to PATH
 #[cfg(target_os = "windows")]
 pub fn append<T: fmt::Display>(var: T, value: T) -> io::Result<()> {
-    use windows::Win32::Foundation::ERROR_SUCCESS;
-
-    return unsafe {
-        // A pointer to a null-terminated string of 16-bit Unicode characters.
-        let mut key: Registry::HKEY = std::mem::zeroed();
-        let subkey = ToWide::from("Environment");
-
-        let mut result = Registry::RegOpenKeyExW(
-            Registry::HKEY_CURRENT_USER,
-            subkey.wide,
-            0,
-            Registry::KEY_ALL_ACCESS,
-            &mut key as *mut Registry::HKEY,
-        );
-
-        let env_string = get(&var)?;
-
-        let var = ToWide::from(&var.to_string());
-        if result == ERROR_SUCCESS {
-            let mut env_vec = env_string.split(";").collect::<Vec<&str>>();
-            let env = value.to_string();
-            env_vec.push(env.as_str());
-            let env_result = env_vec.as_slice().join(";");
-            let wresult = ToWide::from(&env_result);
-            result = Registry::RegSetValueExW(
-                key,
-                var.wide,
-                0,
-                Registry::REG_SZ,
-                wresult.inner.as_ptr() as *const u8,
-                (wresult.inner.len() * 2) as u32,
-            )
-        }
-
-        if result == ERROR_SUCCESS {
-            Ok(())
-        } else {
-            Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!(
-                    "Failed to set environment variable, Error code: {}",
-                    result.0
-                ),
-            ))
-        }
-    };
+    let key = RegKey::predef(HKEY_CURRENT_USER).open_subkey_with_flags("Environment", KEY_ALL_ACCESS)?;
+    let env_original: String = key.get_value(var.to_string())?;
+    let mut env_vec = env_original.split(";").collect::<Vec<&str>>();
+    if !env_vec.contains(&value.to_string().as_str()) {
+        let env = value.to_string();
+        env_vec.push(env.as_str());
+        key.set_value(var.to_string(), &env_vec.as_slice().join(";").as_str())?;
+    }
+    Ok(())
 }
 
 /// Prepends a value to an environment variable
@@ -208,52 +118,15 @@ pub fn prepend<T: fmt::Display>(var: T, value: T) -> io::Result<()> {
 /// Useful for prepending a value to PATH
 #[cfg(target_os = "windows")]
 pub fn prepend<T: fmt::Display>(var: T, value: T) -> io::Result<()> {
-    use windows::Win32::Foundation::ERROR_SUCCESS;
-
-    return unsafe {
-        // A pointer to a null-terminated string of 16-bit Unicode characters.
-        let mut key: Registry::HKEY = std::mem::zeroed();
-        let subkey = ToWide::from("Environment");
-
-        let mut result = Registry::RegOpenKeyExW(
-            Registry::HKEY_CURRENT_USER,
-            subkey.wide,
-            0,
-            Registry::KEY_ALL_ACCESS,
-            &mut key as *mut Registry::HKEY,
-        );
-
-        let env_string = get(&var)?;
-
-        let var = ToWide::from(&var.to_string());
-        if result == ERROR_SUCCESS {
-            let mut env_vec = env_string.split(";").collect::<Vec<&str>>();
-            let env = value.to_string();
-            env_vec.insert(0, env.as_str());
-            let env_result = env_vec.as_slice().join(";");
-            let wresult = ToWide::from(&env_result);
-            result = Registry::RegSetValueExW(
-                key,
-                var.wide,
-                0,
-                Registry::REG_SZ,
-                wresult.inner.as_ptr() as *const u8,
-                (wresult.inner.len() * 2) as u32,
-            )
-        }
-
-        if result == ERROR_SUCCESS {
-            Ok(())
-        } else {
-            Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!(
-                    "Failed to set environment variable, Error code: {}",
-                    result.0
-                ),
-            ))
-        }
-    };
+    let key = RegKey::predef(HKEY_CURRENT_USER).open_subkey_with_flags("Environment", KEY_ALL_ACCESS)?;
+    let env_original: String = key.get_value(var.to_string())?;
+    let mut env_vec = env_original.split(";").collect::<Vec<&str>>();
+    if !env_vec.contains(&value.to_string().as_str()) {
+        let env = value.to_string();
+        env_vec.insert(0, env.as_str());
+        key.set_value(var.to_string(), &env_vec.as_slice().join(";").as_str())?;
+    }
+    Ok(())
 }
 
 /// Sets an environment variable without checking
@@ -273,46 +146,8 @@ pub fn set<T: fmt::Display, U: fmt::Display>(var: T, value: U) -> io::Result<()>
 /// If it does you will override the value.
 #[cfg(target_os = "windows")]
 pub fn set<T: fmt::Display, U: fmt::Display>(var: T, value: U) -> io::Result<()> {
-    use windows::Win32::Foundation::ERROR_SUCCESS;
-
-    return unsafe {
-        // A pointer to a null-terminated string of 16-bit Unicode characters.
-        let mut key: Registry::HKEY = std::mem::zeroed();
-        let subkey = ToWide::from("Environment");
-
-        let mut result = Registry::RegOpenKeyExW(
-            Registry::HKEY_CURRENT_USER,
-            subkey.wide,
-            0,
-            Registry::KEY_ALL_ACCESS,
-            &mut key as *mut Registry::HKEY,
-        );
-
-        let var = ToWide::from(&var.to_string());
-        let wdata = ToWide::from(&value.to_string());
-        if result == ERROR_SUCCESS {
-            result = Registry::RegSetValueExW(
-                key,
-                var.wide,
-                0,
-                Registry::REG_SZ,
-                wdata.inner.as_ptr() as *const u8,
-                (wdata.inner.len() * 2) as u32,
-            )
-        }
-
-        if result == ERROR_SUCCESS {
-            Ok(())
-        } else {
-            Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!(
-                    "Failed to set environment variable, Error code: {}",
-                    result.0
-                ),
-            ))
-        }
-    };
+    let key = RegKey::predef(HKEY_CURRENT_USER).open_subkey_with_flags("Environment", KEY_ALL_ACCESS)?;
+    key.set_value(var.to_string(), &value.to_string())
 }
 
 #[cfg(target_family = "unix")]

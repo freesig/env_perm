@@ -14,4 +14,4 @@ keywords = ["env", "environment", "variable"]
 dirs = "4.0.0"
 
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.35.0", features = ["Win32_System_Registry", "Win32_Foundation", "alloc"] }
+winreg = "0.10"
