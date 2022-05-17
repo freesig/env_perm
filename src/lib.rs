@@ -56,7 +56,7 @@ where
     T: fmt::Display + AsRef<std::ffi::OsStr>,
     U: fmt::Display,
 {
-    let from = get(&var).unwrap();
+    let from = get(&var).unwrap_or_else(|_| "".to_string());
     if from.len() > 0 {
         Ok(())
     } else {
