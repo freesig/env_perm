@@ -10,7 +10,7 @@ readme = "README.md"
 license = "MIT"
 keywords = ["env", "environment", "variable"]
 
-[target.'cfg(not(windows))'.dependencies]
+[dependencies]
 dirs = "4.0.0"
 
 [target.'cfg(windows)'.dependencies]

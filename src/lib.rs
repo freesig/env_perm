@@ -27,7 +27,7 @@ use std::path::PathBuf;
 use winreg::RegKey;
 
 #[cfg(target_family = "windows")]
-use winreg::enums::{HKEY_CURRENT_USER, KEY_ALL_ACCESS};
+use winreg::enums::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_ALL_ACCESS};
 
 #[cfg(target_family = "unix")]
 use std::env;
@@ -35,6 +35,13 @@ use std::env;
 use std::env::VarError;
 use std::fmt;
 use std::io;
+
+#[cfg(target_family="windows")]
+pub fn check_prerequisites() {
+    if dirs::document_dir().unwrap().join("WindowsPowerShell").exists() {
+
+    }
+}
 
 
 /// Checks if a environment variable is set.
@@ -147,7 +154,7 @@ pub fn set<T: fmt::Display, U: fmt::Display>(var: T, value: U) -> io::Result<()>
 /// If it does you will override the value.
 #[cfg(target_os = "windows")]
 pub fn set<T: fmt::Display, U: fmt::Display>(var: T, value: U) -> io::Result<()> {
-    let key = RegKey::predef(HKEY_CURRENT_USER).open_subkey_with_flags("Environment", KEY_ALL_ACCESS)?;
+    let key = RegKey::predef(HKEY_LOCAL_MACHINE).open_subkey_with_flags(r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment", KEY_ALL_ACCESS)?;
     key.set_value(var.to_string(), &value.to_string())
 }
 
