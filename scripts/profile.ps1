@@ -16,6 +16,15 @@ function setenv_set_if_not_exist([string]$name, [string]$value) {
     }
 }
 
+function setenv_prepend([string]$name, [string]$value) {
+
+    [Environment]::SetEnvironmentVariable($name, "$value;$(Get-Content -Path env:$name)", "Process")
+}
+
+function setenv_append([string]$name, [string]$value) {
+    [Environment]::SetEnvironmentVariable($name, "$(Get-Content -Path env:$name);$value", "Process")
+}
+
 function setenv_path_append([string]$value) {
     $env:Path += ";$value"
 }
@@ -39,7 +48,5 @@ function setenv_path_prepend_if_not_contains([string]$value) {
 }
 # ----------------------------------SET_ENV_UFNS_END
 # ----------------------------------SET_ENV_DEFS_BEG
-
-
 # ----------------------------------SET_ENV_DEFS_END
-# ----------------------------------SET_ENV_EN
+# ----------------------------------SET_ENV_END
